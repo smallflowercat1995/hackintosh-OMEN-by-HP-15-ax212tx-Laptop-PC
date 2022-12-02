@@ -1,0 +1,84 @@
+遇到问题：
+卡住[EB|#LOG:EXITBS:START]
+    https://dortania.github.io/OpenCore-Install-Guide/troubleshooting/extended/kernel-issues.html#stuck-on-eb-log-exitbs-start
+
+尝试：
+# https://dortania.github.io/OpenCore-Install-Guide/extras/kaslr-fix.html#using-devirtualisemmio
+
+
+# 发现报错IONVMEFamily，傲腾SSD 配置
+# 模板：https://github.com/dortania/OpenCore-Install-Guide/blob/master/extra-files/Spoof-SSDT.dsl
+# SSDT-NVME.dsl -> SSDT-NVME.aml
+DefinitionBlock ("", "SSDT", 2, "hack", "NVMe-Pcc", 0x00000000)
+{
+    External (_SB_.PCI0.RP11.PXSX, DeviceObj)
+
+    Method (_SB.PCI0.RP11.PXSX._DSM, 4, NotSerialized)  // _DSM: Device-Specific Method
+    {
+        If (!Arg2)
+        {
+            Return (Buffer (One)
+            {
+                 0x03                                             // .
+            })
+        }
+
+        Return (Package (0x04)
+        {
+            "class-code", 
+            Buffer (0x04)
+            {
+                 0xFF, 0x08, 0x01, 0x00                           // ....
+            }, 
+
+            "built-in", 
+            Buffer (One)
+            {
+                 0x00                                             // .
+            }
+        })
+    }
+}
+
+# 发现不能调整亮度 屏蔽 rx460 显卡
+# 模板：https://github.com/dortania/Getting-Started-With-ACPI/blob/master/extra-files/decompiled/SSDT-GPU-DISABLE.dsl.zip
+# SSDT-Disable_DGPU.dsl -> SSDT-Disable_DGPU.aml
+DefinitionBlock ("", "SSDT", 2, "ACDT", "NDGP", 0x00000000)
+{
+    External (_SB_.PCI0.PEG0.PEGP._OFF, MethodObj)    // 0 Arguments
+
+    If (_OSI ("Darwin"))
+    {
+        Device (DGPU)
+        {
+            Name (_HID, "DGPU1000")  // _HID: Hardware ID
+            Method (_INI, 0, NotSerialized)  // _INI: Initialize
+            {
+                If (CondRefOf (\_SB.PCI0.PEG0.PEGP._OFF))
+                {
+                    \_SB.PCI0.PEG0.PEGP._OFF ()
+                }
+            }
+        }
+    }
+}
+
+# 成功进入MacOS之后，配置
+# 使用hackintosh核显驱动
+# 使用hackintosh定制USB端口驱动，注意定制端口会产生 SSDT-USBX 可以不需要，因为已经在第四步生成了
+
+# 设备属性显卡里要移除掉 Internet@0,2,0 启用 H.265 编解码
+# 加上 enable-backlight-registers-fix 和 enable-backlight-smoother DATA类型 01000000
+DeviceProperties
+Add 
+# Laptop Recommended value for UHD 630
+    PciRoot(0x0)/Pci(0x2,0x0)
+        enable-backlight-registers-fix data 01000000
+        enable-backlight-smoother data 01000000
+
+# 防止生成日志文件
+Misc
+Debug
+    AppleDebug boolean NO
+    DisableWatchDog boolean NO
+    Target number 0

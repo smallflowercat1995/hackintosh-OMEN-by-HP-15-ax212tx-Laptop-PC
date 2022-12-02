@@ -1,0 +1,37 @@
+请参考官方文档：
+    https://dortania.github.io/OpenCore-Install-Guide/find-hardware.html#finding-hardware-using-windows
+
+CPU Model
+    Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
+    Kaby Lake-H
+
+GPU Model
+    Intel HD Graphics 630
+        \_SB.PCI0.GFX0
+    Radeon RX 460 (Polaris 11)
+        \_SB.PCI0.PEG0.PEGP
+
+
+Chipset Model
+    Intel(R) 100 Series/C230 Series Chipset Family LPC Controller (HM175) - A152
+
+Keyboard, Trackpad and Touchscreen Connection Type
+    SMBus
+        Synaptics SMBus TouchPad
+            \_SB.PCI0.LPCB.PS2M
+
+    USB 输入设备
+        HID-compliant mouse
+
+Audio Codec
+    Intel Kaby Lake HDMI @ Intel Sunrise Point PCH - High Definition Audio Controller [D1]	PCI
+    Realtek ALC295 @ Intel Sunrise Point PCH - High Definition Audio Controller [D1]	PCI
+
+
+Network Controller models
+    Realtek RTL8168/8111 PCI-E Gigabit Ethernet Adapter	PCI
+
+
+Drive Model
+    INTEL HBRPEKNX0202AH
+

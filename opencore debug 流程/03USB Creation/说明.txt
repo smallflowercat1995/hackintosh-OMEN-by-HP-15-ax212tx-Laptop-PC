@@ -1,0 +1,13 @@
+USB Creation 请参考官方文档：
+    https://dortania.github.io/OpenCore-Install-Guide/installer-guide/winblows-install.html#downloading-macos
+
+rufus 下载
+    https://rufus.ie/zh/#google_vignette
+
+Adding The Base OpenCore Files 请参考官方文档：
+    https://dortania.github.io/OpenCore-Install-Guide/installer-guide/opencore-efi.html
+
+# 建议一开始用 debug 包，方便调试
+OpenCorePkg
+    https://github.com/acidanthera/OpenCorePkg/releases/
+

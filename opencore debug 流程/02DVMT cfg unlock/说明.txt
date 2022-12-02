@@ -1,0 +1,129 @@
+bios提取
+  根据第一步获取的硬件信息判断使用适用的主板类型 100/200/Z370/H310C/X299/C400/C620-series systems which run CSME v11 的  Intel CSME System Tools v11 r43 
+  官方网站 可以获取其他主板类型提取工具 https://comsystem-tlt.ru/obzori/me-txe-region
+  使用方法：
+    打开到 Intel CSME System Tools v11 r43 -->  Flash Programming Tool --> WIN64
+    新建一个BIOS备份批处理脚本backup.bat，打开文本，粘贴下面备份的命令：
+      cd /d %~dp0
+      fptw64.exe -bios -d backup.fd
+    右击管理员运行backup.bat，会生成一个名为backup.fd的文件，这个就是BIOS文件了
+
+查找cfg_lock代码
+  解释：
+    CFG LOCK是BIOS的一项功能，其名为MSR 0xE2，是一组特定的容许写入的寄存器。目前绝大多数的主板会锁定这个变量，不让写入，即CFG LCOK为开启的。
+    同时CFG LOCK这个参数在几乎所有笔记本中都不可见，是隐藏的。所以，我们无法直接从BIOS中关闭CFG LOCK。
+    因为CFG LOCK对黑苹果来说尤其重要，它的开启阻止了macos电源管理写入该寄存器，这无法得到原生的AppleIntelPowerManagement CPU电源管理，甚至无法安装启动macos
+    尤其是CPU变频，节能和原生睡眠功能，都与这个息息相关，假设我们不能关闭，在OPENCORE里，为我们提供了两个补丁：AppleCpuPmCfgLock和AppleXcpmCfgLock，当你无法关闭CFG LOCK的时候，这是一个很好的解决方案，至少可以让你正常安装和使用macos。
+    但显然，这是治标不治本，SO，我们的目的，就是要关闭它。
+  打开 cfg lock --> UEFITool.exe，UEFITool的下载官网 https://github.com/LongSoft/UEFITool/releases
+  然后打开你下载好或者提取好的主板bios文件，
+  然后Ctrl+F搜索，选择 Text ，然后输入字符串:CFG LOCK
+  点击OK，下面会出来一栏，双击 Search 栏目，接着会定位到 DriverSampleDxe ，不同的 bios 定位的名称不同，仁者见仁智者见智
+  点击 DriverSampleDxe ，Ctrl+E，输出FFS文件，记住路径，关闭 UEFITool.exe
+  打开 cfg lock --> IRFExtractor.exe，。IRFExtractor.exe的下载官网 https://github.com/LongSoft/Universal-IFR-Extractor/releases
+  选择刚刚输出的FFS文件，然后点击Extract,输出一个txt文件，记住路径,关闭 IRFExtractor.exe
+  打开输出的txt文件，然后Ctrl+F搜索: CFG LOCK
+  然后定位到CFG LOCK
+  记住 VarStoreInfo (VarOffset/VarName): 后面的代码，很重要。每个主板都不一样，再强调一遍，为了方便理解，这里假设代码为 0x3C
+  记住 VarStore: 后面的代码，很重要。每个主板都不一样，再强调一遍，为了方便理解，这里假设代码为 0x3
+  定位行的后面有打开关闭的描述代码，我们可以获取到 bios 默认是 0x1 即锁定状态，类似代码如下：
+    0x99EAA 		One Of: CFG Lock, VarStoreInfo (VarOffset/VarName): 0x3C, VarStore: 0x3, QuestionId: 0x146, Size: 1, Min: 0x0, Max 0x1, Step: 0x0 {05 91 66 02 67 02 46 01 03 00 3C 00 10 10 00 01 00}
+    0x99EBB 			One Of Option: Disabled, Value (8 bit): 0x0 {09 07 04 00 00 00 00}
+    0x99EC2 			One Of Option: Enabled, Value (8 bit): 0x1 (default) {09 07 03 00 30 00 01}
+  然后Ctrl+F搜索: VarStore: VarStoreId: 0x3 ,这里的 0x3 就是上面 VarStore: 后面的代码
+  记住 Name: 后面的字符换，很重要。每个主板都不一样，再强调一遍，为了方便理解，这里假设字符串为 CpuSetup 
+  现在关于cfg_lock的参数就收集到了 CpuSetup 0x3C 0x1 0x0 
+
+查找集显DVMT代码
+  解释：
+    我们必须搞明白一点，macos与windows不一样的是，macos对显存非常敏感。一旦少于64MB的显存，无论怎么打补丁都进不了系统。尤其是一些比较老的核显，如HD4XXX 5XXX。
+    我们一定要保证从BIOS就分配出来必要的显存，在这里我强烈建议至少128MB，才能保证1080P的分辨率。
+    如果上2K或者4K屏，那么256MB预分配显存是必须，当然越大越好。但很不幸的是，很多电脑品牌的BIOS，很残忍地不让修改DVMT显存，这就有点尴尬了。
+    遇到这样的，要么放弃安装黑苹果，老实用回windows。要么，就直接暴力修改BIOS然后刷新，但这个技术要求高，搞不好变砖，风险很高。
+    要么就可以试下用 gnu grub Shell命令工具修改BIOS设置。但是，这种方法也有不完美的，就是BIOS一旦恢复出厂了，又要重新再弄一次，幸好，记住了代码的话，一切将变得简单。
+  
+  打开输出的txt文件，然后Ctrl+F搜索: DVMT Pre-Allocated
+  然后定位到DVMT Pre-Allocated，在这里，我们就能清晰看到，显存大小的具体数值
+  记住两个参数，一是 DVMT Pre-Allocated 设置项，二是 Option: 显存参数项
+  记住 VarStoreInfo (VarOffset/VarName): 后面的代码，很重要。每个主板都不一样，再强调一遍，为了方便理解，这里假设代码为 0xDF
+  记住 VarStore: 后面的代码，很重要。每个主板都不一样，再强调一遍，为了方便理解，这里假设代码为 0x2
+  找到 Option: 后面数值最大的位置，为了方便理解假设最大值 64M 那么查找的样子就是 Option: 64M，记住此位置 Value (8 bit): 后面的代码，很重要。每个主板都不一样，再强调一遍，为了方便理解，这里假设代码为 0x2
+  定位行的后面有缓存描述的代码，我们可以获取到 bios 默认是 0x2 即 64M 缓存符合要求，类似代码如下：
+    0x9B98F 			One Of: DVMT Pre-Allocated, VarStoreInfo (VarOffset/VarName): 0xDF, VarStore: 0x2, QuestionId: 0x1B6, Size: 1, Min: 0x0, Max 0xFE, Step: 0x0 {05 91 3A 11 4D 11 B6 01 02 00 DF 00 10 10 00 FE 00}
+    0x9B9A0 				Default: DefaultId: 0x0, Value (Other) {5B 85 00 00 08}
+    0x9B9A5 					Value {5A 82}
+    0x9B9A7 						QuestionId: 0xAD9 equals value in list (0x73, 0x74) {14 8A D9 0A 02 00 73 00 74 00}
+    0x9B9B1 							64 Bit Unsigned Int: 0x1 {45 0A 01 00 00 00 00 00 00 00}
+    0x9B9BB 							64 Bit Unsigned Int: 0x2 {45 0A 02 00 00 00 00 00 00 00}
+    0x9B9C5 							Conditional {50 02}
+    0x9B9C7 						End {29 02}
+    0x9B9C9 					End {29 02}
+    0x9B9CB 				End {29 02}
+    0x9B9CD 				One Of Option: 0M, Value (8 bit): 0x0 {09 07 3B 11 00 00 00}
+    0x9B9D4 				One Of Option: 32M, Value (8 bit): 0x1 {09 07 3C 11 00 00 01}
+    0x9B9DB 				One Of Option: 64M, Value (8 bit): 0x2 (default) {09 07 3D 11 30 00 02}
+    0x9B9E2 				One Of Option: 4M, Value (8 bit): 0xF0 {09 07 3E 11 00 00 F0}
+    0x9B9E9 				One Of Option: 8M, Value (8 bit): 0xF1 {09 07 3F 11 00 00 F1}
+    0x9B9F0 				One Of Option: 12M, Value (8 bit): 0xF2 {09 07 40 11 00 00 F2}
+    0x9B9F7 				One Of Option: 16M, Value (8 bit): 0xF3 {09 07 41 11 00 00 F3}
+    0x9B9FE 				One Of Option: 20M, Value (8 bit): 0xF4 {09 07 42 11 00 00 F4}
+    0x9BA05 				One Of Option: 24M, Value (8 bit): 0xF5 {09 07 43 11 00 00 F5}
+    0x9BA0C 				One Of Option: 28M, Value (8 bit): 0xF6 {09 07 44 11 00 00 F6}
+    0x9BA13 				One Of Option: 32M/F7, Value (8 bit): 0xF7 {09 07 45 11 00 00 F7}
+    0x9BA1A 				One Of Option: 36M, Value (8 bit): 0xF8 {09 07 46 11 00 00 F8}
+    0x9BA21 				One Of Option: 40M, Value (8 bit): 0xF9 {09 07 47 11 00 00 F9}
+    0x9BA28 				One Of Option: 44M, Value (8 bit): 0xFA {09 07 48 11 00 00 FA}
+    0x9BA2F 				One Of Option: 48M, Value (8 bit): 0xFB {09 07 49 11 00 00 FB}
+    0x9BA36 				One Of Option: 52M, Value (8 bit): 0xFC {09 07 4A 11 00 00 FC}
+    0x9BA3D 				One Of Option: 56M, Value (8 bit): 0xFD {09 07 4B 11 00 00 FD}
+    0x9BA44 				One Of Option: 60M, Value (8 bit): 0xFE {09 07 4C 11 00 00 FE} 
+  然后Ctrl+F搜索: VarStore: VarStoreId: 0x2 ,这里的 0x2 就是上面 VarStore: 后面的代码
+  记住 Name: 后面的字符换，很重要。每个主板都不一样，再强调一遍，为了方便理解，这里假设字符串为 SaSetup 
+  现在关于集显DVMT的参数就收集到了 SaSetup 0xDF 0x2 
+
+查找独显DVMT代码
+
+  打开输出的txt文件，然后Ctrl+F搜索: DVMT Total Gfx Mem
+  然后定位到DVMT Total Gfx Mem，在这里，我们就能清晰看到，显存大小的具体数值
+  记住两个参数，一是DVMT Total Gfx Mem 设置项，二是 Option: 显存参数项
+  记住 VarStoreInfo (VarOffset/VarName): 后面的代码，很重要。每个主板都不一样，再强调一遍，为了方便理解，这里假设代码为 0xE0
+  记住 VarStore: 后面的代码，很重要。每个主板都不一样，再强调一遍，为了方便理解，这里假设代码为 0x2
+  找到 Option: 后面数值最大的位置，为了方便理解假设最大值 MAX 那么查找的样子就是 Option: MAX，记住此位置 Value (8 bit): 后面的代码，很重要。每个主板都不一样，再强调一遍，为了方便理解，这里假设代码为 0x3
+  定位行的后面有缓存描述的代码，我们可以获取到 bios 默认是 0x2 即 64M 缓存符合要求，类似代码如下：
+    0x9BA4F 		One Of: DVMT Total Gfx Mem, VarStoreInfo (VarOffset/VarName): 0xE0, VarStore: 0x2, QuestionId: 0x1B7, Size: 1, Min: 0x1, Max 0x3, Step: 0x0 {05 91 4E 11 4F 11 B7 01 02 00 E0 00 10 10 01 03 00}
+    0x9BA60 			Default: DefaultId: 0x0, Value (Other) {5B 85 00 00 08}
+    0x9BA65 				Value {5A 82}
+    0x9BA67 					QuestionId: 0xAD9 equals value in list (0x73, 0x74) {14 8A D9 0A 02 00 73 00 74 00}
+    0x9BA71 						64 Bit Unsigned Int: 0x2 {45 0A 02 00 00 00 00 00 00 00}
+    0x9BA7B 						64 Bit Unsigned Int: 0x3 {45 0A 03 00 00 00 00 00 00 00}
+    0x9BA85 						Conditional {50 02}
+    0x9BA87 					End {29 02}
+    0x9BA89 				End {29 02}
+    0x9BA8B 			End {29 02}
+    0x9BA8D 			One Of Option: 256M, Value (8 bit): 0x2 (default) {09 07 51 11 30 00 02}
+    0x9BA94 			One Of Option: 128M, Value (8 bit): 0x1 {09 07 50 11 00 00 01}
+    0x9BA9B 			One Of Option: MAX, Value (8 bit): 0x3 {09 07 52 11 00 00 03}
+    0x9BAA2 		End One Of {29 02}
+  然后Ctrl+F搜索: VarStore: VarStoreId: 0x2 ,这里的 0x2 就是上面 VarStore: 后面的代码
+  记住 Name: 后面的字符换，很重要。每个主板都不一样，再强调一遍，为了方便理解，这里假设字符串为 SaSetup 
+  现在关于独显DVMT的参数就收集到了 SaSetup 0xE0 0x2 0x3
+
+制作U盘
+  创建目录 EFI 进入 EFI 创建 BOOT 目录，进入 BOOT 目录 
+  将 modGRUBShell.efi 修改名字为 bootx64.efi ，放到 BOOT 目录，modGRUBShell.efi 官网地址 https://github.com/datasone/grub-mod-setup_var/releases
+  其中 modGRUBShell.efi 支持系统进 GNU grub shell 模式
+  格式化U盘为fat32，将 EFI 复制到 fat32 格式的U盘
+  
+U盘引导GNU grub 修改 CFG_lock 和 DVMT
+  完成后重启电脑，进主板热键启动，选择U盘启动，然后进入了工具的主页面
+  改变参数值执行命令格式 setup_var_cv [Name] [VarStoreInfo (VarOffset/VarName)] [Option] [Option]，所以执行如下
+  然后现在操作解锁cfg lock，将 0x1 转为 0x0 ，输入 setup_var_cv CpuSetup 0x3C 0x1 0x0 ，回车
+  然后现在操作修改 集显DVMT 为最大值 ，将 0x2 转为 0x2 ，输入  setup_var_cv SaSetup 0xDF 0x2 0x2 ，回车
+  然后现在操作修改 独显DVMT 为最大值 ，将 0x2 转为 0x3 ，输入  setup_var_cv SaSetup 0xE0 0x2 0x3 ，回车
+  然后打开你的OC配置文件，把对应有关CFG未解锁的两个选项给去掉，重启就算完成了
+  
+仅限 OMEN by HP 15-ax212tx Laptop PC 解锁使用
+其他型号和品牌电脑，请按照以上步骤测试
+禁用 CFG 锁定： setup_var_cv CpuSetup 0x3C 0x1 0x0
+将预分配的 集显DVMT 设置为 64M：setup_var_cv SaSetup 0xDF 0x2 0x2
+将预分配的 独显DVMT 设置为 MAX：setup_var_cv SaSetup 0xE0 0x2 0x3

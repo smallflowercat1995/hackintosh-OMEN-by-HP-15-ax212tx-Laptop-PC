@@ -1,0 +1,104 @@
+config.plist Setup 请参考官方文档：
+    https://dortania.github.io/OpenCore-Install-Guide/config.plist/#creating-your-config-plist
+
+Laptop Kaby Lake-H 请参考官方文档：
+    https://dortania.github.io/OpenCore-Install-Guide/config-laptop.plist/kaby-lake.html#starting-point
+
+OCAuxiliaryTools
+    https://github.com/ic005k/OCAuxiliaryTools/releases
+
+ProperTree
+    https://github.com/corpnewt/ProperTree
+
+GenSMBIOS
+    https://github.com/corpnewt/GenSMBIOS
+
+# 此时注意将 SSDTTime 生成的补丁文件 patches_OC.plist 的补丁内容复制到 config.plist 内容对应位置进行补充
+# Ctrl + R 选择 EFI/OC 目录可以加载已经配置好的文件，接下来就是细心的配置
+
+
+DeviceProperties
+Add 
+# Laptop Recommended value for UHD 630
+    PciRoot(0x0)/Pci(0x2,0x0)   
+        AAPL,ig-platform-id data 00001B59
+    # 根据第一步获取的硬件信息 ALC285 查找 https://github.com/acidanthera/AppleALC/wiki/Supported-codecs
+    # 声卡布局 alcid 一个一个试试 layout 1, 3, 13, 14, 15, 21, 22, 23, 24, 28, 77
+    PciRoot(0x0)/Pci(0x1f,0x3)
+	layout-id number 24
+        
+
+
+Kernel
+Quirks
+    # 已经在第二步解锁 Cfg Lock	boolean NO
+    AppleXcpmCfgLock boolean NO
+    DisableIoMapper boolean YES	
+    # HP 机器 YES
+    LapicKernelPanic boolean YES
+    PanicNoKextDump boolean YES	
+    PowerTimeoutKernelPanic boolean YES	
+    # Monterey 12 boolean NO 而且 USB 驱动在第四步已经做好
+    XhciPortLimit boolean NO
+Misc
+Boot
+    # 隐藏多余选项，仅保留系统选项，如果想显示其他选项请按空格
+    HideAuxiliary boolean YES
+    # 引导图形化
+    # 下载 acidanthera/OcBinaryData 将 Resources 放到 EFI/OC/Resources
+    # https://github.com/acidanthera/OcBinaryData
+    # 下载 opencore 将 OpenCanopy.efi 放到 EFI/OC/Drivers
+    # https://github.com/acidanthera/OpenCorePkg/releases
+    PickerMode string External
+    PickerAttributes number 1
+    # 不止一个主题，自行挑选
+    PickerVariant string Acidanthera\GoldenGate
+Debug
+    AppleDebug boolean YES
+    ApplePanic boolean YES
+    DisableWatchDog boolean YES
+    Target number 67
+Security
+    AllowSetDefault boolean YES	
+    BlacklistAppleUpdate boolean YES	
+    ExposeSensitiveData number 3
+    ScanPolicy number 0	
+    SecureBootModel string Disabled
+    Vault string Optional
+NVRAM
+7C436110-AB2A-4BBB-A880-FE41995C9F82
+
+    boot-args string -v debug=0x100 keepsyms=1 alcid=1
+    # 中文键盘映射
+    prev-lang:kbd string zh-Hans:252
+    # 关闭SIP  
+    csr-active-config data 67000000
+    WriteFlash boolean YES
+PlatformInfo
+# 通过 GenSMBIOS 生成 iGPU: HD 630 + dGPU: Radeon Pro 555X/560X MacBookPro14,3
+# Type -> SystemProductName
+# Serial -> SystemSerialNumber
+# Board Serial -> MLB
+# SmUUID -> SystemUUID
+# 这里按照官方教程操作即可检测地址 https://checkcoverage.apple.com/
+Generic
+    Automatic boolean YES
+    MLB string ?
+    SystemProductName string ?
+    SystemSerialNumber string ?
+    SystemUUID string ?
+    # ROM 请参考 https://dortania.github.io/OpenCore-Post-Install/universal/iservices.html#using-gensmbios
+    ROM data ?
+UEFI
+ConnectDrivers boolean YES
+Drivers
+    HfsPlus.efi  boolean YES
+    OpenRuntime.efi  boolean YES
+    OpenCanopy.efi  boolean YES
+Output
+    # 有可能会发生主题不加载的问题，可以尝试关闭或打开此项
+    ProvideConsoleGop  boolean YES/NO
+Quirks
+    ReleaseUsbOwnership boolean YES
+    # HP 机器 YES
+    UnblockFsConnect boolean YES

@@ -1,0 +1,123 @@
+请参考官方文档：
+    https://dortania.github.io/OpenCore-Install-Guide/ktext.html
+
+builds
+    https://dortania.github.io/builds/
+
+SSDTTime
+    https://github.com/corpnewt/SSDTTime
+
+USBToolBox/kext
+    https://github.com/USBToolBox/kext
+
+USBToolBox/tool
+    https://github.com/USBToolBox/tool
+
+Firmware Drivers
+Universal
+    HfsPlus.efi
+        https://github.com/acidanthera/OcBinaryData/blob/master/Drivers/HfsPlus.efi
+    
+Kexts
+Must haves
+    Lilu
+        https://github.com/acidanthera/Lilu/releases
+
+    VirtualSMC
+        https://github.com/acidanthera/VirtualSMC/releases
+
+Graphics
+    WhateverGreen
+        https://github.com/acidanthera/WhateverGreen/releases
+
+Audio
+    AppleALC
+        https://github.com/acidanthera/AppleALC/releases
+
+Ethernet
+    RealtekRTL8111
+        https://github.com/Mieze/RTL8111_driver_for_OS_X/releases
+
+USB
+    USBToolBox
+        https://github.com/USBToolBox/kext/releases
+        https://github.com/USBToolBox/tool/releases
+        
+
+WiFi and Bluetooth
+Broadcom
+    AirportBrcmFixup
+        https://github.com/acidanthera/AirportBrcmFixup/releases
+    BrcmPatchRAM
+        https://github.com/acidanthera/BrcmPatchRAM/releases
+
+# intel 如果你想用intel网卡的话
+    itlwm
+        https://github.com/OpenIntelWireless/itlwm/releases
+    BrcmPatchRAM
+        https://github.com/acidanthera/BrcmPatchRAM/releases
+    IntelBluetoothFirmware
+        https://github.com/OpenIntelWireless/IntelBluetoothFirmware/releases
+
+Extras
+    Sinetek-rtsx
+        https://github.com/sinetek/Sinetek-rtsx
+
+Laptop Input
+PS2 Keyboards/Trackpads
+    VoodooPS2
+        https://github.com/acidanthera/VoodooPS2/releases
+
+SMBus Trackpads
+    VoodooRMI
+        https://github.com/VoodooSMBus/VoodooRMI/releases
+	https://github.com/VoodooSMBus/VoodooSMBus
+
+
+Misc
+    ECEnabler
+        https://github.com/1Revenger1/ECEnabler/releases
+
+    BrightnessKeys
+        https://github.com/acidanthera/BrightnessKeys/releases
+
+Laptop
+Kaby Lake-H (7th Gen)
+    SSDTTime
+        https://github.com/corpnewt/SSDTTime
+
+        P. Dump DSDT
+        # 生成 aml 文件位置 Results 
+
+        SSDT-PNLF
+            0. PNLF
+            根据CPU型号选择 16  | Skylake/Kaby Lake, some Haswell | 0x056C
+
+        SSDT-HPET.aml
+            1. FixHPET
+            默认即可
+
+        SSDT-EC-USBX
+            3. FakeEC Laptop
+
+        SSDT-USBX
+            4. USBX
+
+        SSDT-PLUG 
+            5. PluginType
+
+        SSDT-PMC
+            6. PMC
+
+        SSDT-AWAC
+            7. AWAC
+
+        SSDT-XOSI
+            A. XOSI
+            21. Windows 11 (Windows 2021)
+
+        SSDT-PNLF
+            https://github.com/dortania/Getting-Started-With-ACPI/blob/master/extra-files/compiled/SSDT-PNLF.aml
+
+        SSDT-GPI0
+            需要 MacOS 环境检测修补，触摸板不工作可以用鼠标代替
