@@ -68,13 +68,12 @@ DefinitionBlock ("", "SSDT", 2, "ACDT", "NDGP", 0x00000000)
 # 使用hackintosh定制USB端口驱动，注意定制端口会产生 SSDT-USBX 可以不需要，因为已经在第四步生成了
 
 # 设备属性显卡里要移除掉 Internet@0,2,0 启用 H.265 编解码
-# 加上 enable-backlight-registers-fix 和 enable-backlight-smoother DATA类型 01000000
-DeviceProperties
-Add 
-# Laptop Recommended value for UHD 630
-    PciRoot(0x0)/Pci(0x2,0x0)
-        enable-backlight-registers-fix data 01000000
-        enable-backlight-smoother data 01000000
+
+# 引导参数去掉 -v debug=0x100 keepsyms=1
+NVRAM
+7C436110-AB2A-4BBB-A880-FE41995C9F82
+    boot-args string 
+
 
 # 防止生成日志文件
 Misc

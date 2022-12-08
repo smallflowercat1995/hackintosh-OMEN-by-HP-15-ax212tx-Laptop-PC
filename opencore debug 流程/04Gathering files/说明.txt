@@ -112,6 +112,13 @@ Kaby Lake-H (7th Gen)
         SSDT-AWAC
             7. AWAC
 
+        SSDT-USB-Reset
+            8. USB Reset
+
+        SSDT-Bridge
+            9. PCI Bridge
+            输入 MAC 的路径 PciRoot(0x0)/Pci(0x0,0x0)/Pci(0x0,0x0)
+
         SSDT-XOSI
             A. XOSI
             21. Windows 11 (Windows 2021)

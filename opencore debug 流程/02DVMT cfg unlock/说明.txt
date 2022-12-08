@@ -1,3 +1,6 @@
+修改 Windows 硬件时钟为 UTC 时间，以管理员身份打开 「PowerShell」，输入以下命令：
+    Reg add HKLM\SYSTEM\CurrentControlSet\Control\TimeZoneInformation /v RealTimeIsUniversal /t REG_DWORD /d 1
+
 bios提取
   根据第一步获取的硬件信息判断使用适用的主板类型 100/200/Z370/H310C/X299/C400/C620-series systems which run CSME v11 的  Intel CSME System Tools v11 r43 
   官方网站 可以获取其他主板类型提取工具 https://comsystem-tlt.ru/obzori/me-txe-region
@@ -15,12 +18,12 @@ bios提取
     因为CFG LOCK对黑苹果来说尤其重要，它的开启阻止了macos电源管理写入该寄存器，这无法得到原生的AppleIntelPowerManagement CPU电源管理，甚至无法安装启动macos
     尤其是CPU变频，节能和原生睡眠功能，都与这个息息相关，假设我们不能关闭，在OPENCORE里，为我们提供了两个补丁：AppleCpuPmCfgLock和AppleXcpmCfgLock，当你无法关闭CFG LOCK的时候，这是一个很好的解决方案，至少可以让你正常安装和使用macos。
     但显然，这是治标不治本，SO，我们的目的，就是要关闭它。
-  打开 cfg lock --> UEFITool.exe，UEFITool的下载官网 https://github.com/LongSoft/UEFITool/releases
+  打开 UEFITool.exe，UEFITool的下载官网 https://github.com/LongSoft/UEFITool/releases
   然后打开你下载好或者提取好的主板bios文件，
   然后Ctrl+F搜索，选择 Text ，然后输入字符串:CFG LOCK
   点击OK，下面会出来一栏，双击 Search 栏目，接着会定位到 DriverSampleDxe ，不同的 bios 定位的名称不同，仁者见仁智者见智
   点击 DriverSampleDxe ，Ctrl+E，输出FFS文件，记住路径，关闭 UEFITool.exe
-  打开 cfg lock --> IRFExtractor.exe，。IRFExtractor.exe的下载官网 https://github.com/LongSoft/Universal-IFR-Extractor/releases
+  打开 IRFExtractor.exe ， IRFExtractor.exe的下载官网 https://github.com/LongSoft/Universal-IFR-Extractor/releases
   选择刚刚输出的FFS文件，然后点击Extract,输出一个txt文件，记住路径,关闭 IRFExtractor.exe
   打开输出的txt文件，然后Ctrl+F搜索: CFG LOCK
   然后定位到CFG LOCK
@@ -89,7 +92,7 @@ bios提取
   记住 VarStoreInfo (VarOffset/VarName): 后面的代码，很重要。每个主板都不一样，再强调一遍，为了方便理解，这里假设代码为 0xE0
   记住 VarStore: 后面的代码，很重要。每个主板都不一样，再强调一遍，为了方便理解，这里假设代码为 0x2
   找到 Option: 后面数值最大的位置，为了方便理解假设最大值 MAX 那么查找的样子就是 Option: MAX，记住此位置 Value (8 bit): 后面的代码，很重要。每个主板都不一样，再强调一遍，为了方便理解，这里假设代码为 0x3
-  定位行的后面有缓存描述的代码，我们可以获取到 bios 默认是 0x2 即 64M 缓存符合要求，类似代码如下：
+  定位行的后面有缓存描述的代码，我们可以获取到 bios 默认是 0x2 即 256M 缓存符合要求，类似代码如下：
     0x9BA4F 		One Of: DVMT Total Gfx Mem, VarStoreInfo (VarOffset/VarName): 0xE0, VarStore: 0x2, QuestionId: 0x1B7, Size: 1, Min: 0x1, Max 0x3, Step: 0x0 {05 91 4E 11 4F 11 B7 01 02 00 E0 00 10 10 01 03 00}
     0x9BA60 			Default: DefaultId: 0x0, Value (Other) {5B 85 00 00 08}
     0x9BA65 				Value {5A 82}
@@ -127,3 +130,5 @@ U盘引导GNU grub 修改 CFG_lock 和 DVMT
 禁用 CFG 锁定： setup_var_cv CpuSetup 0x3C 0x1 0x0
 将预分配的 集显DVMT 设置为 64M：setup_var_cv SaSetup 0xDF 0x2 0x2
 将预分配的 独显DVMT 设置为 MAX：setup_var_cv SaSetup 0xE0 0x2 0x3
+
+重点，重启后手动调整时间，已经切换为 UTC 时间。

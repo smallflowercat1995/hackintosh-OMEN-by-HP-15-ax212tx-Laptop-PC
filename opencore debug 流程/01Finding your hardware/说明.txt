@@ -29,6 +29,7 @@ Audio Codec
 
 
 Network Controller models
+    Broadcom BCM4360 802.11ac Wireless Network Adapter	PCI
     Realtek RTL8168/8111 PCI-E Gigabit Ethernet Adapter	PCI
 
 

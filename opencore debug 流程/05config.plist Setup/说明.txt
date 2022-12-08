@@ -68,7 +68,7 @@ Security
 NVRAM
 7C436110-AB2A-4BBB-A880-FE41995C9F82
 
-    boot-args string -v debug=0x100 keepsyms=1 alcid=1
+    boot-args string -v debug=0x100 keepsyms=1
     # 中文键盘映射
     prev-lang:kbd string zh-Hans:252
     # 关闭SIP  
