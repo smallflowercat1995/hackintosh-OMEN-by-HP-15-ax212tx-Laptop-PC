@@ -23,7 +23,7 @@
 ## 注意
 1.本机SSD更换为 傲腾SSD 支持安装 Ventura 可以按照流程制作 nvme.aml 补丁，其实就在 EFI -> OC -> ACPI 里  
 
-2.我现在用的免驱拨通网卡，不需要驱动  
+2.我现在用的免驱博通网卡，不需要驱动  
 如果你是intel网卡，那在 ventura 的配置应该是这样的  
 <img width="964" alt="image" title="intel" src="https://user-images.githubusercontent.com/94947393/205294387-150b0bc5-4517-43a8-9082-b0403ec64484.png">   
 你如果已经将intel网卡替换成了 博通网卡 然而买错了不能免驱的话，网卡配置是这样的：  
